@@ -17,25 +17,33 @@ class TestCreateUser:
                         2. Проверка успешного ответа;
                         3. Удаление пользователя после завершения теста.
                         ''')
-    def test_create_user(self, create_new_user):
-        response = create_new_user
-        assert response[1].json().get("success") == True and response[1].status_code == StatusCode.OK
+    def test_create_user(self):
+        payload = Person.create_data_correct_user()
+        response = requests.post(URL.main_url + Endpoints.CREATE_USER, data=payload)
+
+        assert response.json().get("success") is True
+        assert response.status_code == StatusCode.OK
+
+
 
     @allure.title('Попытка создания дублирующего пользователя')
     @allure.description('''
                         Тест проверяет невозможность создания пользователя с уже существующими данными:
                         1. Создание нового пользователя;
-                        2. Получение данных для регистрации;
-                        3. Попытка повторной регистрации с теми же данными;
-                        4. Проверка ответа на соответствие статусу "Запрещено";
-                        5. Удаление пользователя после завершения теста.
+                        2. Попытка повторной регистрации с теми же данными;
+                        3. Проверка ответа на соответствие статусу "Запрещено";
+                        4. Удаление пользователя после завершения теста.
                         ''')
-    def test_create_double_user(self, create_new_user):
-        response = create_new_user
-        payload = response[0]
+    def test_create_double_user(self):
+        payload = Person.create_data_correct_user()
+        first_response = requests.post(URL.main_url + Endpoints.CREATE_USER, data=payload)
+
+        assert first_response.json().get("success") is True
+        assert first_response.status_code == StatusCode.OK
+
         response_double_register = requests.post(URL.main_url + Endpoints.CREATE_USER, data=payload)
         assert response_double_register.status_code == StatusCode.FORBIDDEN and (
-            response_double_register.json().get("message") == TextResponse.CREATE_DOUBLE_USER
+                response_double_register.json().get("message") == TextResponse.CREATE_DOUBLE_USER
         )
 
     @allure.title('Попытка создания пользователя с некорректными данными')
@@ -51,4 +59,4 @@ class TestCreateUser:
     ])
     def test_create_user_incorrect_data(self, payload):
         response = requests.post(URL.main_url + Endpoints.CREATE_USER, data=payload)
-        assert response.status_code == StatusCode.FORBIDDEN and response.json().get("success") == False
+        assert response.status_code == StatusCode.FORBIDDEN and response.json().get("success") is False
